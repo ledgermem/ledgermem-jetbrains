@@ -1,0 +1,51 @@
+<idea-plugin>
+    <id>dev.proofly.ledgermem</id>
+    <name>LedgerMem</name>
+    <vendor email="founders@proofly.dev" url="https://ledgermem.dev">Proofly</vendor>
+
+    <description><![CDATA[
+        Persistent memory for AI coding workflows.
+
+        Search, capture, and recall code snippets, decisions, and learnings without leaving the IDE.
+        Works in IntelliJ IDEA, WebStorm, PyCharm, GoLand, RubyMine, PhpStorm, CLion, and Rider.
+        <br/><br/>
+        <b>Features</b>
+        <ul>
+            <li>Tools menu actions: <i>Search Memory</i> and <i>Add Selection</i></li>
+            <li>Right-side tool window with your most recent memories</li>
+            <li>Connects to your LedgerMem workspace via API key (stored locally)</li>
+        </ul>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow
+            id="LedgerMem"
+            anchor="right"
+            icon="AllIcons.Toolwindows.ToolWindowFavorites"
+            factoryClass="dev.proofly.ledgermem.ui.LedgerMemToolWindowFactory"/>
+        <postStartupActivity implementation="dev.proofly.ledgermem.LedgerMemStartup"/>
+        <applicationService serviceImplementation="dev.proofly.ledgermem.services.LedgerMemService"/>
+    </extensions>
+
+    <actions>
+        <group id="LedgerMem.MainGroup" text="LedgerMem" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="LedgerMem.Search"
+                    class="dev.proofly.ledgermem.actions.SearchMemoryAction"
+                    text="Search Memory"
+                    description="Search LedgerMem">
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt M"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt M"/>
+            </action>
+            <action id="LedgerMem.AddSelection"
+                    class="dev.proofly.ledgermem.actions.AddSelectionAction"
+                    text="Add Selection"
+                    description="Save the selected text to LedgerMem">
+                <keyboard-shortcut keymap="$default" first-keystroke="control alt A"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt A"/>
+            </action>
+        </group>
+    </actions>
+</idea-plugin>

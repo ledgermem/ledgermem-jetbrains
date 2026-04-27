@@ -1,0 +1,73 @@
+package dev.proofly.ledgermem.actions
+
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.Task
+import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.ui.popup.JBPopupFactory
+import dev.proofly.ledgermem.LedgerMemPlugin
+import dev.proofly.ledgermem.services.LedgerMemService
+import dev.proofly.ledgermem.services.Memory
+
+class SearchMemoryAction : AnAction("Search Memory", "Search LedgerMem", null) {
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        val query = Messages.showInputDialog(
+            project,
+            "Search query",
+            "${LedgerMemPlugin.DISPLAY_NAME}: Search Memory",
+            null,
+        ) ?: return
+        if (query.isBlank()) return
+
+        val service = service<LedgerMemService>()
+        ProgressManager().run(project, "Searching LedgerMem...") {
+            val results = service.search(query)
+            ApplicationManager.getApplication().invokeLater {
+                if (results.isEmpty()) {
+                    Messages.showInfoMessage(project, "No matches found.", LedgerMemPlugin.DISPLAY_NAME)
+                    return@invokeLater
+                }
+                showResults(results)
+            }
+        }
+    }
+
+    private fun showResults(results: List<Memory>) {
+        val labels = results.map { previewLabel(it) }
+        JBPopupFactory.getInstance()
+            .createPopupChooserBuilder(labels)
+            .setTitle("${LedgerMemPlugin.DISPLAY_NAME} (${results.size})")
+            .setItemChosenCallback { selected ->
+                val idx = labels.indexOf(selected)
+                if (idx >= 0) {
+                    Messages.showInfoMessage(results[idx].content, "Memory ${results[idx].id.take(8)}")
+                }
+            }
+            .createPopup()
+            .showInFocusCenter()
+    }
+
+    private fun previewLabel(memory: Memory): String {
+        val first = memory.content.lineSequence().firstOrNull().orEmpty()
+        val trimmed = if (first.length > 80) first.take(77) + "..." else first
+        val score = memory.score?.let { String.format(" (%.2f)", it) }.orEmpty()
+        return "$trimmed$score"
+    }
+}
+
+private class ProgressManager {
+    fun run(project: com.intellij.openapi.project.Project, title: String, block: () -> Unit) {
+        com.intellij.openapi.progress.ProgressManager.getInstance().run(
+            object : Task.Backgroundable(project, title, true) {
+                override fun run(indicator: ProgressIndicator) {
+                    indicator.isIndeterminate = true
+                    block()
+                }
+            },
+        )
+    }
+}
