@@ -1,5 +1,9 @@
 package dev.proofly.ledgermem.services
 
+import com.intellij.credentialStore.CredentialAttributes
+import com.intellij.credentialStore.Credentials
+import com.intellij.credentialStore.generateServiceName
+import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
@@ -29,14 +33,39 @@ class LedgerMemService {
     private val log: Logger = Logger.getInstance(LedgerMemService::class.java)
     private val props get() = PropertiesComponent.getInstance()
 
+    private fun apiKeyAttributes(): CredentialAttributes =
+        CredentialAttributes(generateServiceName("LedgerMem", KEY_API_KEY))
+
+    private fun loadApiKey(): String {
+        val safe = PasswordSafe.instance.get(apiKeyAttributes())?.getPasswordAsString().orEmpty()
+        if (safe.isNotEmpty()) return safe
+        // One-time migration: previous versions stored the API key in PropertiesComponent
+        // (plaintext on disk). Move it into PasswordSafe and clear the legacy entry.
+        val legacy = props.getValue(KEY_API_KEY, "")
+        if (legacy.isNotEmpty()) {
+            PasswordSafe.instance.set(apiKeyAttributes(), Credentials("ledgermem", legacy))
+            props.unsetValue(KEY_API_KEY)
+            return legacy
+        }
+        return ""
+    }
+
     fun config(): LedgerMemConfig = LedgerMemConfig(
-        apiKey = props.getValue(KEY_API_KEY, ""),
+        apiKey = loadApiKey(),
         workspaceId = props.getValue(KEY_WORKSPACE, ""),
         endpoint = props.getValue(KEY_ENDPOINT, "https://api.ledgermem.dev"),
         defaultLimit = props.getInt(KEY_LIMIT, 10),
     )
 
-    fun setApiKey(value: String) = props.setValue(KEY_API_KEY, value)
+    fun setApiKey(value: String) {
+        if (value.isBlank()) {
+            PasswordSafe.instance.set(apiKeyAttributes(), null)
+        } else {
+            PasswordSafe.instance.set(apiKeyAttributes(), Credentials("ledgermem", value))
+        }
+        // Make sure no plaintext copy lingers in PropertiesComponent.
+        props.unsetValue(KEY_API_KEY)
+    }
     fun setWorkspace(value: String) = props.setValue(KEY_WORKSPACE, value)
     fun setEndpoint(value: String) = props.setValue(KEY_ENDPOINT, value)
     fun setDefaultLimit(value: Int) = props.setInt(KEY_LIMIT, value, 10)
@@ -120,15 +149,39 @@ class LedgerMemService {
     }
 
     private fun parseList(json: String): List<Memory> {
-        // Lightweight parse — extract objects between top-level brackets.
+        // Lightweight parse — extract objects between top-level brackets while
+        // ignoring braces and brackets that appear inside JSON string literals.
         val items = mutableListOf<Memory>()
         var depth = 0
+        var inString = false
+        var escaped = false
         val buf = StringBuilder()
         for (ch in json) {
+            if (depth > 0) buf.append(ch)
+            if (inString) {
+                if (escaped) {
+                    escaped = false
+                } else if (ch == '\\') {
+                    escaped = true
+                } else if (ch == '"') {
+                    inString = false
+                }
+                continue
+            }
             when (ch) {
-                '{' -> { if (depth == 0) buf.clear(); depth++; buf.append(ch) }
-                '}' -> { depth--; buf.append(ch); if (depth == 0) items.add(parseSingle(buf.toString())) }
-                else -> if (depth > 0) buf.append(ch)
+                '"' -> inString = true
+                '{' -> {
+                    if (depth == 0) {
+                        buf.clear()
+                        buf.append(ch)
+                    }
+                    depth++
+                }
+                '}' -> {
+                    depth--
+                    if (depth == 0) items.add(parseSingle(buf.toString()))
+                }
+                else -> { /* no-op */ }
             }
         }
         return items

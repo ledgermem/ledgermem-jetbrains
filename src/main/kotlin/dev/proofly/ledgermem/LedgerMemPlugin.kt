@@ -1,9 +1,8 @@
 package dev.proofly.ledgermem
 
-import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.startup.ProjectActivity
 
 object LedgerMemPlugin {
     const val PLUGIN_ID: String = "dev.proofly.ledgermem"
@@ -11,7 +10,9 @@ object LedgerMemPlugin {
     val log: Logger = Logger.getInstance(LedgerMemPlugin::class.java)
 }
 
-@Service(Service.Level.PROJECT)
+// Registered via plugin.xml as a postStartupActivity. ProjectActivity is the
+// extension point — annotating with @Service was incorrect (it would force the
+// platform to instantiate it as a service container instead of an extension).
 class LedgerMemStartup : ProjectActivity {
     override suspend fun execute(project: Project) {
         LedgerMemPlugin.log.info("LedgerMem ready for project: ${project.name}")
