@@ -69,9 +69,20 @@ class LedgerMemPanel(private val project: Project? = null) {
         if (idx < 0 || idx >= memories.size) return
         val target = memories[idx]
         ApplicationManager.getApplication().executeOnPooledThread {
-            runCatching { service<LedgerMemService>().delete(target.id) }
+            // Surface delete failures to the user. Previously runCatching
+            // silently swallowed the exception, then refresh() ran and the
+            // memory simply reappeared in the list with no explanation —
+            // making it look like the delete button was broken.
+            val outcome = runCatching { service<LedgerMemService>().delete(target.id) }
             ApplicationManager.getApplication().invokeLater {
                 if (project?.isDisposed == true) return@invokeLater
+                outcome.onFailure { err ->
+                    com.intellij.openapi.ui.Messages.showErrorDialog(
+                        project,
+                        err.message ?: err.toString(),
+                        "${dev.proofly.ledgermem.LedgerMemPlugin.DISPLAY_NAME}: Delete Failed",
+                    )
+                }
                 refresh()
             }
         }

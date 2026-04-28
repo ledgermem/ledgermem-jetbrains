@@ -1,5 +1,6 @@
 package dev.proofly.ledgermem.actions
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
@@ -13,6 +14,12 @@ import dev.proofly.ledgermem.services.LedgerMemService
 import dev.proofly.ledgermem.services.Memory
 
 class SearchMemoryAction : AnAction("Search Memory", "Search LedgerMem", null) {
+    // IntelliJ 2022.3+ requires every AnAction to declare its update thread,
+    // otherwise the platform logs "Action ... does not implement
+    // getActionUpdateThread()" on every toolbar refresh. SearchMemoryAction
+    // does not even override update(), so BGT is the safe default.
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val query = Messages.showInputDialog(

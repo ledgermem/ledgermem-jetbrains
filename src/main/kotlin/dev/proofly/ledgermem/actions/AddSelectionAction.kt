@@ -13,10 +13,12 @@ import dev.proofly.ledgermem.LedgerMemPlugin
 import dev.proofly.ledgermem.services.LedgerMemService
 
 class AddSelectionAction : AnAction("Add Selection to Memory", "Save selected text to LedgerMem", null) {
-    // Required since IntelliJ 2022.3 — without this override the platform logs a
-    // "Default action update thread is BGT, but action does not declare it"
-    // warning and may move update() off the EDT, breaking the Editor read.
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
+    // Run update() on a background thread. The work it does — checking whether
+    // an editor exists and has a selection — is read-safe and does not touch
+    // any EDT-only UI state. Declaring EDT here meant every toolbar / popup
+    // refresh blocked the UI thread, which is exactly what JetBrains' BGT
+    // contract is meant to prevent.
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR)
