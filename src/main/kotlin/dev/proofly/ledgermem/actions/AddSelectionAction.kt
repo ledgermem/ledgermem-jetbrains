@@ -1,5 +1,6 @@
 package dev.proofly.ledgermem.actions
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -12,6 +13,11 @@ import dev.proofly.ledgermem.LedgerMemPlugin
 import dev.proofly.ledgermem.services.LedgerMemService
 
 class AddSelectionAction : AnAction("Add Selection to Memory", "Save selected text to LedgerMem", null) {
+    // Required since IntelliJ 2022.3 — without this override the platform logs a
+    // "Default action update thread is BGT, but action does not declare it"
+    // warning and may move update() off the EDT, breaking the Editor read.
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
+
     override fun update(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR)
         e.presentation.isEnabled = editor?.selectionModel?.hasSelection() == true

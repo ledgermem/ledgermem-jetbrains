@@ -18,14 +18,14 @@ import java.awt.FlowLayout
 
 class LedgerMemToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val panel = LedgerMemPanel()
+        val panel = LedgerMemPanel(project)
         val content = toolWindow.contentManager.factory.createContent(panel.component, "Recent", false)
         toolWindow.contentManager.addContent(content)
         panel.refresh()
     }
 }
 
-class LedgerMemPanel {
+class LedgerMemPanel(private val project: Project? = null) {
     private val model = DefaultListModel<String>()
     private val list = JBList(model)
     private val refreshBtn = JButton("Refresh")
@@ -53,6 +53,10 @@ class LedgerMemPanel {
             val service = service<LedgerMemService>()
             val items = runCatching { service.recent() }.getOrElse { emptyList() }
             ApplicationManager.getApplication().invokeLater {
+                // Guard against the tool window being closed (project disposed) while
+                // the pooled-thread fetch was in flight — without this we would mutate
+                // the Swing model after dispose and leak listener references.
+                if (project?.isDisposed == true) return@invokeLater
                 memories = items
                 model.clear()
                 items.forEach { model.addElement(formatItem(it)) }
@@ -66,7 +70,10 @@ class LedgerMemPanel {
         val target = memories[idx]
         ApplicationManager.getApplication().executeOnPooledThread {
             runCatching { service<LedgerMemService>().delete(target.id) }
-            ApplicationManager.getApplication().invokeLater { refresh() }
+            ApplicationManager.getApplication().invokeLater {
+                if (project?.isDisposed == true) return@invokeLater
+                refresh()
+            }
         }
     }
 
