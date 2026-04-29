@@ -1,4 +1,4 @@
-package dev.proofly.ledgermem.actions
+package dev.proofly.getmnemo.actions
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -9,10 +9,10 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.ui.Messages
-import dev.proofly.ledgermem.LedgerMemPlugin
-import dev.proofly.ledgermem.services.LedgerMemService
+import dev.proofly.getmnemo.MnemoPlugin
+import dev.proofly.getmnemo.services.MnemoService
 
-class AddSelectionAction : AnAction("Add Selection to Memory", "Save selected text to LedgerMem", null) {
+class AddSelectionAction : AnAction("Add Selection to Memory", "Save selected text to Mnemo", null) {
     // Run update() on a background thread. The work it does — checking whether
     // an editor exists and has a selection — is read-safe and does not touch
     // any EDT-only UI state. Declaring EDT here meant every toolbar / popup
@@ -31,10 +31,10 @@ class AddSelectionAction : AnAction("Add Selection to Memory", "Save selected te
         val file = e.getData(CommonDataKeys.VIRTUAL_FILE)
         val selection = editor.selectionModel.selectedText.orEmpty().trim()
         if (selection.isEmpty()) {
-            Messages.showWarningDialog(project, "Select some text first.", LedgerMemPlugin.DISPLAY_NAME)
+            Messages.showWarningDialog(project, "Select some text first.", MnemoPlugin.DISPLAY_NAME)
             return
         }
-        val service = service<LedgerMemService>()
+        val service = service<MnemoService>()
         val metadata = mapOf(
             "source" to "jetbrains",
             "file" to (file?.path ?: ""),
@@ -43,7 +43,7 @@ class AddSelectionAction : AnAction("Add Selection to Memory", "Save selected te
         )
 
         com.intellij.openapi.progress.ProgressManager.getInstance().run(
-            object : Task.Backgroundable(project, "Adding to LedgerMem...", true) {
+            object : Task.Backgroundable(project, "Adding to Mnemo...", true) {
                 override fun run(indicator: ProgressIndicator) {
                     indicator.isIndeterminate = true
                     val memory = service.add(selection, metadata)
@@ -51,7 +51,7 @@ class AddSelectionAction : AnAction("Add Selection to Memory", "Save selected te
                         Messages.showInfoMessage(
                             project,
                             "Saved memory ${memory.id.take(8)}.",
-                            LedgerMemPlugin.DISPLAY_NAME,
+                            MnemoPlugin.DISPLAY_NAME,
                         )
                     }
                 }

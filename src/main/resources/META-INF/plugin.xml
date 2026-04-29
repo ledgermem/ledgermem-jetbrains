@@ -1,7 +1,7 @@
 <idea-plugin>
-    <id>dev.proofly.ledgermem</id>
-    <name>LedgerMem</name>
-    <vendor email="founders@proofly.dev" url="https://ledgermem.dev">Proofly</vendor>
+    <id>dev.proofly.getmnemo</id>
+    <name>Mnemo</name>
+    <vendor email="founders@getmnemo.xyz" url="https://getmnemo.dev">Proofly</vendor>
 
     <description><![CDATA[
         Persistent memory for AI coding workflows.
@@ -13,7 +13,7 @@
         <ul>
             <li>Tools menu actions: <i>Search Memory</i> and <i>Add Selection</i></li>
             <li>Right-side tool window with your most recent memories</li>
-            <li>Connects to your LedgerMem workspace via API key (stored locally)</li>
+            <li>Connects to your Mnemo workspace via API key (stored locally)</li>
         </ul>
     ]]></description>
 
@@ -24,33 +24,33 @@
 
     <!-- Allow hot-reload (Settings | Plugins | Install/Update without restart). -->
     <change-notes><![CDATA[
-        See <a href="https://github.com/ledgermem/ledgermem-jetbrains/releases">GitHub releases</a>.
+        See <a href="https://github.com/getmnemo/getmnemo-jetbrains/releases">GitHub releases</a>.
     ]]></change-notes>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow
-            id="LedgerMem"
+            id="Mnemo"
             anchor="right"
             icon="AllIcons.Toolwindows.ToolWindowFavorites"
-            factoryClass="dev.proofly.ledgermem.ui.LedgerMemToolWindowFactory"/>
-        <postStartupActivity implementation="dev.proofly.ledgermem.LedgerMemStartup"/>
-        <applicationService serviceImplementation="dev.proofly.ledgermem.services.LedgerMemService"/>
+            factoryClass="dev.proofly.getmnemo.ui.MnemoToolWindowFactory"/>
+        <postStartupActivity implementation="dev.proofly.getmnemo.MnemoStartup"/>
+        <applicationService serviceImplementation="dev.proofly.getmnemo.services.MnemoService"/>
     </extensions>
 
     <actions>
-        <group id="LedgerMem.MainGroup" text="LedgerMem" popup="true">
+        <group id="Mnemo.MainGroup" text="Mnemo" popup="true">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
-            <action id="LedgerMem.Search"
-                    class="dev.proofly.ledgermem.actions.SearchMemoryAction"
+            <action id="Mnemo.Search"
+                    class="dev.proofly.getmnemo.actions.SearchMemoryAction"
                     text="Search Memory"
-                    description="Search LedgerMem">
+                    description="Search Mnemo">
                 <keyboard-shortcut keymap="$default" first-keystroke="control alt M"/>
                 <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt M"/>
             </action>
-            <action id="LedgerMem.AddSelection"
-                    class="dev.proofly.ledgermem.actions.AddSelectionAction"
+            <action id="Mnemo.AddSelection"
+                    class="dev.proofly.getmnemo.actions.AddSelectionAction"
                     text="Add Selection"
-                    description="Save the selected text to LedgerMem">
+                    description="Save the selected text to Mnemo">
                 <keyboard-shortcut keymap="$default" first-keystroke="control alt A"/>
                 <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt A"/>
             </action>

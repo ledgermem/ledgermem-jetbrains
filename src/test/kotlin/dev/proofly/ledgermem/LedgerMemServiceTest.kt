@@ -1,18 +1,18 @@
-package dev.proofly.ledgermem
+package dev.proofly.getmnemo
 
-import dev.proofly.ledgermem.services.LedgerMemService
-import dev.proofly.ledgermem.services.Memory
+import dev.proofly.getmnemo.services.MnemoService
+import dev.proofly.getmnemo.services.Memory
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class LedgerMemServiceTest {
+class MnemoServiceTest {
     @Test
     fun `service exposes config keys as constants`() {
-        assertEquals("ledgermem.apiKey", LedgerMemService.KEY_API_KEY)
-        assertEquals("ledgermem.workspaceId", LedgerMemService.KEY_WORKSPACE)
-        assertEquals("ledgermem.endpoint", LedgerMemService.KEY_ENDPOINT)
-        assertEquals("ledgermem.defaultLimit", LedgerMemService.KEY_LIMIT)
+        assertEquals("getmnemo.apiKey", MnemoService.KEY_API_KEY)
+        assertEquals("getmnemo.workspaceId", MnemoService.KEY_WORKSPACE)
+        assertEquals("getmnemo.endpoint", MnemoService.KEY_ENDPOINT)
+        assertEquals("getmnemo.defaultLimit", MnemoService.KEY_LIMIT)
     }
 
     @Test
@@ -29,8 +29,8 @@ class LedgerMemServiceTest {
 
     @Test
     fun `plugin metadata is well-formed`() {
-        assertEquals("dev.proofly.ledgermem", LedgerMemPlugin.PLUGIN_ID)
-        assertEquals("LedgerMem", LedgerMemPlugin.DISPLAY_NAME)
-        assertNotNull(LedgerMemPlugin.log)
+        assertEquals("dev.proofly.getmnemo", MnemoPlugin.PLUGIN_ID)
+        assertEquals("Mnemo", MnemoPlugin.DISPLAY_NAME)
+        assertNotNull(MnemoPlugin.log)
     }
 }

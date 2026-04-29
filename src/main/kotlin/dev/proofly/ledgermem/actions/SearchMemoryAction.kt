@@ -1,4 +1,4 @@
-package dev.proofly.ledgermem.actions
+package dev.proofly.getmnemo.actions
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -9,11 +9,11 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.popup.JBPopupFactory
-import dev.proofly.ledgermem.LedgerMemPlugin
-import dev.proofly.ledgermem.services.LedgerMemService
-import dev.proofly.ledgermem.services.Memory
+import dev.proofly.getmnemo.MnemoPlugin
+import dev.proofly.getmnemo.services.MnemoService
+import dev.proofly.getmnemo.services.Memory
 
-class SearchMemoryAction : AnAction("Search Memory", "Search LedgerMem", null) {
+class SearchMemoryAction : AnAction("Search Memory", "Search Mnemo", null) {
     // IntelliJ 2022.3+ requires every AnAction to declare its update thread,
     // otherwise the platform logs "Action ... does not implement
     // getActionUpdateThread()" on every toolbar refresh. SearchMemoryAction
@@ -25,17 +25,17 @@ class SearchMemoryAction : AnAction("Search Memory", "Search LedgerMem", null) {
         val query = Messages.showInputDialog(
             project,
             "Search query",
-            "${LedgerMemPlugin.DISPLAY_NAME}: Search Memory",
+            "${MnemoPlugin.DISPLAY_NAME}: Search Memory",
             null,
         ) ?: return
         if (query.isBlank()) return
 
-        val service = service<LedgerMemService>()
-        ProgressManager().run(project, "Searching LedgerMem...") {
+        val service = service<MnemoService>()
+        ProgressManager().run(project, "Searching Mnemo...") {
             val results = service.search(query)
             ApplicationManager.getApplication().invokeLater {
                 if (results.isEmpty()) {
-                    Messages.showInfoMessage(project, "No matches found.", LedgerMemPlugin.DISPLAY_NAME)
+                    Messages.showInfoMessage(project, "No matches found.", MnemoPlugin.DISPLAY_NAME)
                     return@invokeLater
                 }
                 showResults(results)
@@ -47,7 +47,7 @@ class SearchMemoryAction : AnAction("Search Memory", "Search LedgerMem", null) {
         val labels = results.map { previewLabel(it) }
         JBPopupFactory.getInstance()
             .createPopupChooserBuilder(labels)
-            .setTitle("${LedgerMemPlugin.DISPLAY_NAME} (${results.size})")
+            .setTitle("${MnemoPlugin.DISPLAY_NAME} (${results.size})")
             .setItemChosenCallback { selected ->
                 val idx = labels.indexOf(selected)
                 if (idx >= 0) {

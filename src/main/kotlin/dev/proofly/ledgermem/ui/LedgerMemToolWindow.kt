@@ -1,4 +1,4 @@
-package dev.proofly.ledgermem.ui
+package dev.proofly.getmnemo.ui
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
@@ -7,8 +7,8 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
-import dev.proofly.ledgermem.services.LedgerMemService
-import dev.proofly.ledgermem.services.Memory
+import dev.proofly.getmnemo.services.MnemoService
+import dev.proofly.getmnemo.services.Memory
 import javax.swing.DefaultListModel
 import javax.swing.JButton
 import javax.swing.JPanel
@@ -16,16 +16,16 @@ import javax.swing.SwingConstants
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 
-class LedgerMemToolWindowFactory : ToolWindowFactory {
+class MnemoToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val panel = LedgerMemPanel(project)
+        val panel = MnemoPanel(project)
         val content = toolWindow.contentManager.factory.createContent(panel.component, "Recent", false)
         toolWindow.contentManager.addContent(content)
         panel.refresh()
     }
 }
 
-class LedgerMemPanel(private val project: Project? = null) {
+class MnemoPanel(private val project: Project? = null) {
     private val model = DefaultListModel<String>()
     private val list = JBList(model)
     private val refreshBtn = JButton("Refresh")
@@ -50,7 +50,7 @@ class LedgerMemPanel(private val project: Project? = null) {
 
     fun refresh() {
         ApplicationManager.getApplication().executeOnPooledThread {
-            val service = service<LedgerMemService>()
+            val service = service<MnemoService>()
             val items = runCatching { service.recent() }.getOrElse { emptyList() }
             ApplicationManager.getApplication().invokeLater {
                 // Guard against the tool window being closed (project disposed) while
@@ -73,14 +73,14 @@ class LedgerMemPanel(private val project: Project? = null) {
             // silently swallowed the exception, then refresh() ran and the
             // memory simply reappeared in the list with no explanation —
             // making it look like the delete button was broken.
-            val outcome = runCatching { service<LedgerMemService>().delete(target.id) }
+            val outcome = runCatching { service<MnemoService>().delete(target.id) }
             ApplicationManager.getApplication().invokeLater {
                 if (project?.isDisposed == true) return@invokeLater
                 outcome.onFailure { err ->
                     com.intellij.openapi.ui.Messages.showErrorDialog(
                         project,
                         err.message ?: err.toString(),
-                        "${dev.proofly.ledgermem.LedgerMemPlugin.DISPLAY_NAME}: Delete Failed",
+                        "${dev.proofly.getmnemo.MnemoPlugin.DISPLAY_NAME}: Delete Failed",
                     )
                 }
                 refresh()

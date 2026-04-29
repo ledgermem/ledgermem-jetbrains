@@ -1,4 +1,4 @@
-package dev.proofly.ledgermem.services
+package dev.proofly.getmnemo.services
 
 import com.intellij.credentialStore.CredentialAttributes
 import com.intellij.credentialStore.Credentials
@@ -7,7 +7,7 @@ import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
-import dev.proofly.ledgermem.LedgerMemPlugin
+import dev.proofly.getmnemo.MnemoPlugin
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
@@ -21,7 +21,7 @@ data class Memory(
     val score: Double? = null,
 )
 
-data class LedgerMemConfig(
+data class MnemoConfig(
     val apiKey: String,
     val workspaceId: String,
     val endpoint: String,
@@ -29,12 +29,12 @@ data class LedgerMemConfig(
 )
 
 @Service(Service.Level.APP)
-class LedgerMemService {
-    private val log: Logger = Logger.getInstance(LedgerMemService::class.java)
+class MnemoService {
+    private val log: Logger = Logger.getInstance(MnemoService::class.java)
     private val props get() = PropertiesComponent.getInstance()
 
     private fun apiKeyAttributes(): CredentialAttributes =
-        CredentialAttributes(generateServiceName("LedgerMem", KEY_API_KEY))
+        CredentialAttributes(generateServiceName("Mnemo", KEY_API_KEY))
 
     private fun loadApiKey(): String {
         val safe = PasswordSafe.instance.get(apiKeyAttributes())?.getPasswordAsString().orEmpty()
@@ -43,17 +43,17 @@ class LedgerMemService {
         // (plaintext on disk). Move it into PasswordSafe and clear the legacy entry.
         val legacy = props.getValue(KEY_API_KEY, "")
         if (legacy.isNotEmpty()) {
-            PasswordSafe.instance.set(apiKeyAttributes(), Credentials("ledgermem", legacy))
+            PasswordSafe.instance.set(apiKeyAttributes(), Credentials("getmnemo", legacy))
             props.unsetValue(KEY_API_KEY)
             return legacy
         }
         return ""
     }
 
-    fun config(): LedgerMemConfig = LedgerMemConfig(
+    fun config(): MnemoConfig = MnemoConfig(
         apiKey = loadApiKey(),
         workspaceId = props.getValue(KEY_WORKSPACE, ""),
-        endpoint = props.getValue(KEY_ENDPOINT, "https://api.ledgermem.dev"),
+        endpoint = props.getValue(KEY_ENDPOINT, "https://api.getmnemo.dev"),
         defaultLimit = props.getInt(KEY_LIMIT, 10),
     )
 
@@ -61,7 +61,7 @@ class LedgerMemService {
         if (value.isBlank()) {
             PasswordSafe.instance.set(apiKeyAttributes(), null)
         } else {
-            PasswordSafe.instance.set(apiKeyAttributes(), Credentials("ledgermem", value))
+            PasswordSafe.instance.set(apiKeyAttributes(), Credentials("getmnemo", value))
         }
         // Make sure no plaintext copy lingers in PropertiesComponent.
         props.unsetValue(KEY_API_KEY)
@@ -101,24 +101,24 @@ class LedgerMemService {
         delete(cfg, "/v1/memories/${enc(id)}?workspaceId=${enc(cfg.workspaceId)}")
     }
 
-    private fun ensureConfigured(): LedgerMemConfig {
+    private fun ensureConfigured(): MnemoConfig {
         val cfg = config()
-        check(cfg.apiKey.isNotBlank()) { "${LedgerMemPlugin.DISPLAY_NAME}: API key is not set." }
-        check(cfg.workspaceId.isNotBlank()) { "${LedgerMemPlugin.DISPLAY_NAME}: workspace ID is not set." }
+        check(cfg.apiKey.isNotBlank()) { "${MnemoPlugin.DISPLAY_NAME}: API key is not set." }
+        check(cfg.workspaceId.isNotBlank()) { "${MnemoPlugin.DISPLAY_NAME}: workspace ID is not set." }
         return cfg
     }
 
-    private fun post(cfg: LedgerMemConfig, path: String, body: String): String =
+    private fun post(cfg: MnemoConfig, path: String, body: String): String =
         request(cfg, path, "POST", body)
 
-    private fun get(cfg: LedgerMemConfig, path: String): String =
+    private fun get(cfg: MnemoConfig, path: String): String =
         request(cfg, path, "GET", null)
 
-    private fun delete(cfg: LedgerMemConfig, path: String) {
+    private fun delete(cfg: MnemoConfig, path: String) {
         request(cfg, path, "DELETE", null)
     }
 
-    private fun request(cfg: LedgerMemConfig, path: String, method: String, body: String?): String {
+    private fun request(cfg: MnemoConfig, path: String, method: String, body: String?): String {
         val url = URL(cfg.endpoint.trimEnd('/') + path)
         val conn = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = method
@@ -139,8 +139,8 @@ class LedgerMemService {
             val stream = if (code in 200..299) conn.inputStream else conn.errorStream
             val text = stream?.let { BufferedReader(InputStreamReader(it, StandardCharsets.UTF_8)).readText() } ?: ""
             if (code !in 200..299) {
-                log.warn("LedgerMem $method $path -> $code: $text")
-                throw IllegalStateException("LedgerMem $method $path failed: HTTP $code")
+                log.warn("Mnemo $method $path -> $code: $text")
+                throw IllegalStateException("Mnemo $method $path failed: HTTP $code")
             }
             return text
         } finally {
@@ -207,9 +207,9 @@ class LedgerMemService {
     private fun enc(s: String): String = java.net.URLEncoder.encode(s, "UTF-8")
 
     companion object {
-        const val KEY_API_KEY = "ledgermem.apiKey"
-        const val KEY_WORKSPACE = "ledgermem.workspaceId"
-        const val KEY_ENDPOINT = "ledgermem.endpoint"
-        const val KEY_LIMIT = "ledgermem.defaultLimit"
+        const val KEY_API_KEY = "getmnemo.apiKey"
+        const val KEY_WORKSPACE = "getmnemo.workspaceId"
+        const val KEY_ENDPOINT = "getmnemo.endpoint"
+        const val KEY_LIMIT = "getmnemo.defaultLimit"
     }
 }
